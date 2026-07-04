@@ -5,7 +5,7 @@ Runs each experiment's ``run.py -> plot.py -> table.py`` triad (the exact script
 vary per experiment) and reports a summary. Experiments are grouped into two tiers:
 
   synthetic : exp1..exp4 + st_plot   (self-contained, no downloads)
-  real      : exp6-s1/s2/diag        (needs the LIBSVM datasets; see download_data.py)
+  real      : exp6-s1/s2/diag/conv   (needs the LIBSVM datasets; see download_data.py)
 
 Examples
 --------
@@ -125,6 +125,21 @@ REGISTRY = {
         "steps": [
             _step("run", "scan_biactivity.py", smoke_args=["--max-samples", "2000"]),
             _step("table", "table_biactivity_diagnostic.py"),
+        ],
+    },
+    "exp6-conv": {
+        "dir": "expe6_real_world",
+        "tier": "real",
+        "smoke_skip": True,
+        # Re-runs Setting 2 with the plateau outer-stop to show NTRBA converges
+        # early. Needs exp6-s2 results first (scalar_cv reference rows); the
+        # --tag matches where the table/plot read (setting2_cap100).
+        "desc": "Setting 2 convergence study (plateau stop) -> table_s2_cap100.tex, "
+                "fig_s2_convergence.pdf (run exp6-s2 first)",
+        "steps": [
+            _step("run", "run_s2_convergence.py", args=["--tag", "setting2_cap100"]),
+            _step("table", "table_s2_convergence.py"),
+            _step("plot", "plot_s2_convergence.py"),
         ],
     },
 }

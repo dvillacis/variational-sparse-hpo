@@ -1,0 +1,150 @@
+"""Setting-2 table under the outer CONVERGENCE stop, capped at 100 (Option A).
+
+Both gradient methods run with the same plateau early-stop (relative best-objective
+improvement < 1e-4 over 5 iters) capped at 100 outer iterations, and are timed in one
+clean run (results/setting2_cap100). A ``Stop`` column reports the termination
+criterion so the reader sees which method actually converged: NTRBA reaches its
+objective plateau early, while the fixed-step subgradient runs to the cap without
+converging. scalar_cv is the fixed-budget reference from the paper run
+(results/setting2).
+
+Usage
+-----
+    python table_s2_convergence.py
+"""
+
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+import table_common_clock as T   # reuse helpers, S2_* config
+
+RES = T.RES
+SRC_TAG = 'setting2_cap100'
+OUT = RES / SRC_TAG / 'table_s2_cap100.tex'
+
+# termination_reason_ -> short table label
+TERM_LABEL = {
+    'obj_plateau': 'plat.',      # converged: objective plateau
+    'step_tol': 'step',          # converged: trust-region step below tol
+    'stationary': 'stat.',       # converged: gradient below tol
+    'radius_min': 'radius',
+    't_max': 'time',
+    'completed': 'cap',          # hit the outer-iteration budget (did not converge)
+    None: r'---',
+}
+
+# science + efficiency columns: (key, header, lower_is_better, spec, kind)
+#   kind: 'msd' mean+/-std, 'mean' point value, 'term' termination label
+COLS = [
+    ('test_f1', r'F1 $\uparrow$', False, '.3f', 'msd'),
+    ('sparsity', r'Active feat. (\%) $\downarrow$', True, '.3f', 'msd'),
+    ('n_iter', r'It.', True, '.0f', 'mean'),
+    ('termination', r'Stop', None, None, 'term'),
+    ('t_per_iter', r't/it $\downarrow$', True, '.2f', 'mean'),
+    ('elapsed', r'Total $\downarrow$', True, '.1f', 'mean'),
+]
+SHADE_KEYS = {'test_f1', 'sparsity', 't_per_iter', 'elapsed'}
+NUM_KEYS = {'test_f1', 'sparsity', 'n_iter', 't_per_iter', 'elapsed'}
+
+
+def _merged():
+    old = pd.read_pickle(RES / 'setting2' / 'results.pkl')
+    conv = pd.read_pickle(RES / SRC_TAG / 'results.pkl')
+    scalar = old[old.method == 'scalar_cv']
+    grad = conv[conv.method.isin(['sparseho_wl1', 'ntrba_wl1'])]
+    return pd.concat([scalar, grad], ignore_index=True)
+
+
+def _term_label(block):
+    vals = [v for v in block.termination.tolist() if v is not None] \
+        if 'termination' in block else []
+    if not vals:
+        return r'---'
+    mode, _ = Counter(vals).most_common(1)[0]
+    return TERM_LABEL.get(mode, str(mode))
+
+
+def build():
+    df = _merged()
+    datasets = [d for d in T.S2_DATASETS if d in set(df.dataset.unique())]
+
+    stats, terms = {}, {}
+    for d in datasets:
+        for m in T.S2_METHODS:
+            b = df[(df.dataset == d) & (df.method == m)]
+            for k, _, _, _, kind in COLS:
+                if kind == 'term':
+                    terms[(d, m)] = _term_label(b) if m != 'scalar_cv' else r'---'
+                else:
+                    stats[(d, m, k)] = T._ms(b, k)
+
+    best = {}
+    for k, _, lo, _, kind in COLS:
+        if k in SHADE_KEYS:
+            methods = ['sparseho_wl1', 'ntrba_wl1'] if k in ('t_per_iter', 'elapsed') \
+                else T.S2_METHODS
+            best[k] = T._best(stats, datasets, methods, k, lo)
+
+    colspec = 'll' + ''.join('l' if kind == 'term' else 'r'
+                             for _, _, _, _, kind in COLS)
+
+    L = [r'\begin{table}[t]', r'  \centering',
+         r'  \setlength{\tabcolsep}{3pt}', r'  \small', r'  \caption{%',
+         r'    Experiment~5 Setting~2, run to convergence: real-world classification benchmarks',
+         r'    (mean\,\textpm\,std over random splits). Both gradient methods use the same outer',
+         r'    convergence stop---terminate when the best validation objective improves by less than',
+         r'    $10^{-4}$ (relative) over $5$ consecutive outer iterations---capped at $100$ outer',
+         r'    iterations, and are timed in one clean run. \emph{It.}\ is outer iterations run,',
+         r'    \emph{Stop} the termination criterion (\texttt{plat.}: objective plateau; \texttt{step}:',
+         r'    trust-region step below tolerance; \texttt{cap}: reached the $100$-iteration budget',
+         r'    without converging), and \emph{t/it}/\emph{Total} are wall-clock seconds per iteration',
+         r'    and in total. \texttt{NTRBA} reaches its plateau in $\sim\!20$ iterations; the',
+         r'    fixed-step subgradient \texttt{Sparse-HO} runs to the cap without converging, yet',
+         r'    reaches comparable test F1. The scalar baseline (cross-validation search) is the',
+         r'    fixed-budget reference from the paper run; only its total time is comparable. Gray',
+         r'    shading marks the best value within each dataset block.}',
+         r'  \label{tab:expe5_setting2}',
+         rf'  \begin{{tabular}}{{{colspec}}}', r'    \toprule',
+         r'    & & \multicolumn{2}{c}{Quality} & \multicolumn{4}{c}{Efficiency (time in s)} \\',
+         r'    \cmidrule(lr){3-4} \cmidrule(lr){5-8}',
+         r'    Dataset & Method & ' + ' & '.join(h for _, h, _, _, _ in COLS) + r' \\',
+         r'    \midrule']
+
+    for di, d in enumerate(datasets):
+        for mi, m in enumerate(T.S2_METHODS):
+            row = [rf'\multirow{{{len(T.S2_METHODS)}}}{{*}}{{{T.S2_DLABEL[d]}}}' if mi == 0 else '',
+                   T.S2_MLABEL[m]]
+            for k, _, _, sp, kind in COLS:
+                if kind == 'term':
+                    lab = terms[(d, m)]
+                    row.append(lab if lab == r'---' else rf'\texttt{{{lab}}}')
+                    continue
+                if kind == 'mean' and m == 'scalar_cv' and k in ('n_iter', 't_per_iter'):
+                    row.append(r'$\text{---}$')          # grid search: no outer loop
+                    continue
+                mu, sd = stats[(d, m, k)]
+                sh = False
+                if k in best:
+                    bv = best[k].get(d, np.nan)
+                    sh = (not np.isnan(mu) and not np.isnan(bv)
+                          and np.isclose(mu, bv, rtol=1e-6))
+                cell = T._fmt(mu, sd, sp) if kind == 'msd' else T._fmt_mean(mu, sp)
+                row.append(T._cell(cell, sh))
+            L.append('    ' + ' & '.join(row) + r' \\')
+        L.append(r'    \midrule' if di != len(datasets) - 1 else r'    \bottomrule')
+    L += [r'  \end{tabular}', r'\end{table}']
+    return '\n'.join(L)
+
+
+def main():
+    tex = build()
+    OUT.write_text(tex + '\n')
+    print(tex)
+    print('\nsaved ->', OUT)
+
+
+if __name__ == '__main__':
+    main()
