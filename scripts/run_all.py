@@ -5,7 +5,7 @@ Runs each experiment's ``run.py -> plot.py -> table.py`` triad (the exact script
 vary per experiment) and reports a summary. Experiments are grouped into two tiers:
 
   synthetic : exp1..exp4 + st_plot   (self-contained, no downloads)
-  real      : exp6-s1/s2/s3/diag     (needs the LIBSVM datasets; see download_data.py)
+  real      : exp6-s1/s2/diag        (needs the LIBSVM datasets; see download_data.py)
 
 Examples
 --------
@@ -114,15 +114,6 @@ REGISTRY = {
             _step("run", "run_s2.py"),
             _step("table", "table_s2.py"),
             _step("table", "table_dataset_stats.py"),
-        ],
-    },
-    "exp6-s3": {
-        "dir": "expe6_real_world",
-        "tier": "real",
-        "desc": "Setting 3 counterfactual -> tab_s3_counterfactual",
-        "steps": [
-            _step("run", "run_s3_counterfactual.py", smoke_args=["--smoke"]),
-            _step("table", "table_s3.py"),
         ],
     },
     "exp6-diag": {

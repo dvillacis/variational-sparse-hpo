@@ -43,7 +43,7 @@ from run_s2 import (
     _make_split, _preprocess_features_for_split, _alpha_max,
     _HeldOutLogisticWithMaxIter,
 )
-from run_s3_counterfactual import _solve_beta, _phi_val, _best_log_alpha
+from inner_helpers import _solve_beta, _phi_val, _best_log_alpha
 
 from sparse_ho.models import WeightedSparseLogReg
 from sparse_ho.algo import (

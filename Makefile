@@ -33,7 +33,7 @@ all:
 	uv run python scripts/run_all.py --tier all
 
 # Single experiment: `make exp3` (works for exp1..exp4). For exp6 sub-runs use
-# `uv run python scripts/run_experiment.py exp6-s3` etc.
+# `uv run python scripts/run_experiment.py exp6-diag` etc.
 exp%:
 	uv run python scripts/run_experiment.py exp$*
 

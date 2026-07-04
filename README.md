@@ -79,7 +79,6 @@ make exp4
 | `exp4` | Experiment 4 (gradient starvation vs baselines) | `fig_convergence.pdf` | `tab:expe4_sota` |
 | `exp6-s1` | Experiment 5, Setting 1 (semi-synthetic) | — | `tab:expe5_setting1`, `tab:expe5_dataset_stats` |
 | `exp6-s2` | Experiment 5, Setting 2 (real classification) | — | `tab:expe5_setting2` |
-| `exp6-s3` | Setting 3 counterfactual | — | — |
 | `exp6-diag` | Diagnostic (natural biactivity) | — | `tab:biactivity_diagnostic` |
 | `st_plot` | Theory figure (soft-thresholding coderivative) | `graph_soft_thresholding.pdf` | — |
 
