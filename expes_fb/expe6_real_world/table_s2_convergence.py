@@ -141,6 +141,11 @@ def build():
 
 def main():
     tex = build()
+    # 8 columns (adds Stop to the common-clock block) exceed the 372pt single
+    # column; go landscape, matching Table tab:expe5_setting1. sn-jnl redefines
+    # sidewaystable (auto center+threeparttable); rotating is in the preamble.
+    tex = tex.replace(r'\begin{table}[t]', r'\begin{sidewaystable}', 1)
+    tex = tex.replace(r'\end{table}', r'\end{sidewaystable}', 1)
     OUT.write_text(tex + '\n')
     print(tex)
     print('\nsaved ->', OUT)
