@@ -76,7 +76,7 @@ BIACTIVE_TOL_REL = 1e-3
 # (TR). None => disabled => fixed N_OUTER budget (reproduces the paper run).
 # When set, the outer loop stops once the best validation objective improves by
 # less than PLATEAU_RTOL (relative) over the last PLATEAU_PATIENCE iterations,
-# capped at N_OUTER. See run_s2_convergence.py.
+# capped at N_OUTER.
 PLATEAU_PATIENCE = None
 PLATEAU_RTOL     = 1e-4
 
