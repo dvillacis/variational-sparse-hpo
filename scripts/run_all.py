@@ -4,7 +4,7 @@
 Runs each experiment's ``run.py -> plot.py -> table.py`` triad (the exact scripts
 vary per experiment) and reports a summary. Experiments are grouped into two tiers:
 
-  synthetic : exp1..exp5 + st_plot   (self-contained, no downloads)
+  synthetic : exp1..exp4 + st_plot   (self-contained, no downloads)
   real      : exp6-s1/s2/s3/diag     (needs the LIBSVM datasets; see download_data.py)
 
 Examples
@@ -76,7 +76,6 @@ REGISTRY = {
             _step("run", "run.py", smoke_env=SMOKE_ENV),
             _step("plot", "plot.py"),
             _step("table", "table.py"),
-            _step("table", "table_ntrba.py"),
         ],
     },
     "exp4": {
@@ -88,15 +87,6 @@ REGISTRY = {
             _step("run", "run.py", smoke_env=SMOKE_ENV),
             _step("plot", "plot.py"),
             _step("table", "table.py"),
-        ],
-    },
-    "exp5": {
-        "dir": "expe5_scalability",
-        "tier": "synthetic",
-        "desc": "oracle wall-clock scaling -> fig_scaling.pdf, fig_sparsity.pdf",
-        "steps": [
-            _step("run", "run.py", smoke_env=SMOKE_ENV),
-            _step("plot", "plot.py"),
         ],
     },
     "st_plot": {
@@ -113,7 +103,6 @@ REGISTRY = {
         "steps": [
             _step("run", "run_s1.py"),
             _step("table", "table_s1.py"),
-            _step("plot", "plot_s1.py"),
         ],
     },
     "exp6-s2": {
@@ -125,7 +114,6 @@ REGISTRY = {
             _step("run", "run_s2.py"),
             _step("table", "table_s2.py"),
             _step("table", "table_dataset_stats.py"),
-            _step("plot", "plot_s2.py"),
         ],
     },
     "exp6-s3": {
@@ -135,7 +123,6 @@ REGISTRY = {
         "steps": [
             _step("run", "run_s3_counterfactual.py", smoke_args=["--smoke"]),
             _step("table", "table_s3.py"),
-            _step("plot", "plot_s3.py"),
         ],
     },
     "exp6-diag": {

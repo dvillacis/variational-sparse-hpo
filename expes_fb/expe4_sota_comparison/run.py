@@ -89,8 +89,10 @@ RESULTS_PATH = RESULTS_DIR / 'results.pkl'
 # When the variable is unset, the full configuration above is used unchanged.
 import os
 if os.environ.get('VSHPO_SMOKE'):
-    NM_PAIRS   = [(100, 150)]
-    RHO_VALUES = [0.95]
+    # Use the plot's representative instance (n=200, m=300, rho=0.98) so the
+    # convergence figure is exercised in smoke mode.
+    NM_PAIRS   = [(200, 300)]
+    RHO_VALUES = [0.98]
     N_SEEDS    = 2
     N_OUTER    = 5
     N_GRID     = 10

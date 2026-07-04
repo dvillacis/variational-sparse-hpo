@@ -77,7 +77,6 @@ make exp4
 | `exp2` | Experiment 2 (feature-wise vs scalar) | `fig_penalty_profile.pdf` | `tab:expe2_metrics` |
 | `exp3` | Experiment 3 (oracle × optimizer ablation) | `fig_convergence.pdf` | `tab:expe3_oracle_ablation` |
 | `exp4` | Experiment 4 (gradient starvation vs baselines) | `fig_convergence.pdf` | `tab:expe4_sota` |
-| `exp5` | Oracle wall-clock scaling (runtime claim) | `fig_scaling.pdf`, `fig_sparsity.pdf` | — |
 | `exp6-s1` | Experiment 5, Setting 1 (semi-synthetic) | — | `tab:expe5_setting1`, `tab:expe5_dataset_stats` |
 | `exp6-s2` | Experiment 5, Setting 2 (real classification) | — | `tab:expe5_setting2` |
 | `exp6-s3` | Setting 3 counterfactual | — | — |

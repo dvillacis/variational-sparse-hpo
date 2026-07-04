@@ -1,11 +1,6 @@
 """Plot results for Experiment 4 — SOTA comparison: gradient starvation.
 
-Produces two figures saved to the results/ subdirectory:
-
-  fig_metrics.pdf
-      4-row × 3-column bar chart.  Rows: val_loss_gap, hidden_grad_norm_0,
-      hidden_recall, F1.  Columns: ρ ∈ {0.90, 0.95, 0.98} (averaged over
-      problem sizes and seeds).  Bars: three methods.
+Produces the manuscript figure, saved to the results/ subdirectory:
 
   fig_convergence.pdf
       Four-panel convergence plot for the representative instance
@@ -98,101 +93,6 @@ INNER_TOL = 1e-8
 CALIBRATION_SLACK = 0.05
 
 apply_plot_style()
-
-
-# ---------------------------------------------------------------------------
-# Figure 1 — scalar metrics bar chart
-# ---------------------------------------------------------------------------
-
-SCALAR_METRICS = [
-    ('val_loss_gap',       'Val. loss gap  Δℓ',                  False),
-    ('hidden_grad_norm_0', '‖∇_{x_hid}Φ‖  at k=0',              True),
-    ('hidden_recall',      'Hidden-feature recall',               False),
-    ('f1',                 'Support recovery F1',                  False),
-]
-
-RHO_VALUES = [0.90, 0.95, 0.98]
-
-
-def plot_metrics(df):
-    n_metrics = len(SCALAR_METRICS)
-    n_rho = len(RHO_VALUES)
-
-    fig, axes = plt.subplots(
-        n_metrics, n_rho,
-        figsize=grid_figure_size(
-            n_metrics, n_rho, width='twocol', panel_aspect=0.92, extra_height=0.9
-        ),
-        sharey='row',
-    )
-    if n_rho == 1:
-        axes = axes[:, np.newaxis]
-
-    x = np.arange(len(METHODS))
-    width = 0.62
-
-    for row, (metric, ylabel, log_scale) in enumerate(SCALAR_METRICS):
-        for col, rho in enumerate(RHO_VALUES):
-            ax = axes[row, col]
-            sub = df[np.isclose(df.rho, rho)]
-            means, errs = [], []
-            for mname in METHODS:
-                vals = sub[sub.method == mname][metric].values.astype(float)
-                means.append(np.nanmean(vals) if len(vals) else np.nan)
-                errs.append(np.nanstd(vals)   if len(vals) else 0.0)
-
-            for xpos, mean, err, mname in zip(x, means, errs, METHODS):
-                style = METHOD_STYLES[mname]
-                ax.bar(
-                    xpos,
-                    mean,
-                    width,
-                    yerr=err,
-                    capsize=3,
-                    color=style['facecolor'],
-                    edgecolor=style['edgecolor'],
-                    linewidth=0.8,
-                    hatch=style['hatch'],
-                    error_kw=BAR_ERROR_KW,
-                )
-            ax.set_xticks(x)
-            if row == n_metrics - 1:
-                ax.set_xticklabels(['scalar', 'wℓ1', 'ntrba-wℓ1'], rotation=18, ha='right')
-            else:
-                ax.set_xticklabels([])
-            if log_scale:
-                # shift any non-positive values before log scale
-                ax.set_yscale('symlog', linthresh=1e-6)
-            if col == 0:
-                ax.set_ylabel(ylabel)
-            if row == 0:
-                ax.set_title(f'ρ = {rho}')
-            ax.set_xlim(-0.6, len(METHODS) - 0.4)
-            ax.grid(axis='y', color=REFERENCE_COLORS['grid'], linewidth=0.5, linestyle='--')
-
-    legend_handles = [
-        plt.Rectangle(
-            (0, 0), 1, 1,
-            facecolor=METHOD_STYLES[mname]['facecolor'],
-            edgecolor=METHOD_STYLES[mname]['edgecolor'],
-            hatch=METHOD_STYLES[mname]['hatch'],
-            label=METHOD_LABELS[mname],
-        )
-        for mname in METHODS
-    ]
-    add_shared_legend(
-        fig,
-        axes.ravel(),
-        handles=legend_handles,
-        labels=[h.get_label() for h in legend_handles],
-        ncol=3,
-        bbox_to_anchor=(0.5, 0.995),
-    )
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
-    out = RESULTS_DIR / 'fig_metrics.pdf'
-    fig.savefig(out, bbox_inches='tight')
-    print(f"Saved {out}")
-    plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
@@ -393,7 +293,6 @@ def main():
     print(f"rho:      {sorted(df.rho.unique())}")
     print(f"Seeds:    {sorted(df.seed.unique())}")
 
-    plot_metrics(df)
     plot_convergence(df)
 
 

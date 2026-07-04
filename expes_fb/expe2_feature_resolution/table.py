@@ -1,8 +1,8 @@
 """Generate LaTeX table for Experiment 2.
 
-Produces a single LaTeX table (printed to stdout and saved to results/)
-summarising support-recovery F1 and test MSE for both methods across all
-configurations.  Replaces the bar-chart figures fig_f1.pdf and fig_mse.pdf.
+Produces the manuscript table (tab:expe2_metrics; printed to stdout and saved
+to results/) summarising support-recovery F1 and test MSE for both methods
+across all configurations.
 
 Usage
 -----

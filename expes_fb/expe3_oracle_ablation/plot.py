@@ -1,10 +1,7 @@
 """Plot results for Experiment 3 — oracle × optimizer ablation.
 
-Produces four figures saved to the results/ subdirectory:
+Produces the manuscript figure, saved to the results/ subdirectory:
 
-  fig_metrics.pdf       — 2×4 bar chart of scalar metrics across methods and
-                          problem sizes (val_loss_gap, final_grad_norm,
-                          hidden_recall, t_per_iter).
   fig_convergence.pdf   — Two-panel dynamics plot for the representative
                           instance (m=500, seed=0):
                             (a) Validation loss trajectory (all 4 methods).
@@ -89,100 +86,7 @@ apply_plot_style()
 
 
 # ---------------------------------------------------------------------------
-# Figure 1 — scalar metrics bar chart
-# ---------------------------------------------------------------------------
-
-SCALAR_METRICS = [
-    ('val_loss_gap',    'Val. loss gap  Δℓ',      False),
-    ('final_grad_norm', '‖∇Φ‖ at final iterate', True),
-    ('hidden_recall',   'Hidden-feature recall',  False),
-    ('t_per_iter',      'Time per iteration (s)', False),
-]
-
-
-def plot_metrics(df):
-    ms   = sorted(df.m.unique())
-    n_m  = len(ms)
-    n_metrics = len(SCALAR_METRICS)
-
-    fig, axes = plt.subplots(
-        n_metrics, n_m,
-        figsize=grid_figure_size(
-            n_metrics, n_m, width='twocol', panel_aspect=0.92, extra_height=0.9
-        ),
-        sharey='row',
-    )
-    if n_m == 1:
-        axes = axes[:, np.newaxis]
-
-    x = np.arange(len(METHODS))
-    width = 0.62
-
-    for row, (metric, ylabel, log_scale) in enumerate(SCALAR_METRICS):
-        for col, m in enumerate(ms):
-            ax = axes[row, col]
-            sub = df[df.m == m]
-            means, errs = [], []
-            for mname in METHODS:
-                vals = sub[sub.method == mname][metric].values.astype(float)
-                means.append(np.nanmean(vals) if len(vals) else np.nan)
-                errs.append(np.nanstd(vals)   if len(vals) else 0.0)
-
-            for xpos, mean, err, mname in zip(x, means, errs, METHODS):
-                style = METHOD_STYLES[mname]
-                ax.bar(
-                    xpos,
-                    mean,
-                    width,
-                    yerr=err,
-                    capsize=3,
-                    color=style['facecolor'],
-                    edgecolor=style['edgecolor'],
-                    linewidth=0.8,
-                    hatch=style['hatch'],
-                    error_kw=BAR_ERROR_KW,
-                )
-            ax.set_xticks(x)
-            if row == n_metrics - 1:
-                ax.set_xticklabels(['null', 'SC', 'null', 'SC'])
-                ax.set_xlabel('Oracle within optimizer order: NBA, NTRBA')
-            else:
-                ax.set_xticklabels([])
-            if log_scale:
-                ax.set_yscale('log')
-            if col == 0:
-                ax.set_ylabel(ylabel)
-            if row == 0:
-                ax.set_title(f'p = {m}')
-            ax.set_xlim(-0.6, len(METHODS) - 0.4)
-            ax.grid(axis='y', color=REFERENCE_COLORS['grid'], linewidth=0.5, linestyle='--')
-
-    legend_handles = [
-        mpatches.Patch(
-            facecolor=METHOD_STYLES[mname]['facecolor'],
-            edgecolor=METHOD_STYLES[mname]['edgecolor'],
-            hatch=METHOD_STYLES[mname]['hatch'],
-            label=METHOD_LABELS[mname],
-        )
-        for mname in METHODS
-    ]
-    add_shared_legend(
-        fig,
-        axes.ravel(),
-        handles=legend_handles,
-        labels=[handle.get_label() for handle in legend_handles],
-        ncol=4,
-        bbox_to_anchor=(0.5, 0.995),
-    )
-    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
-    out = RESULTS_DIR / 'fig_metrics.pdf'
-    fig.savefig(out, bbox_inches='tight')
-    print(f"Saved {out}")
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------------------
-# Figure 2 — convergence for representative instance
+# Figure — convergence for representative instance
 # ---------------------------------------------------------------------------
 
 def plot_convergence(df, m_rep=500, seed_rep=0):
@@ -268,7 +172,6 @@ def main():
     print(f"Seeds:    {sorted(df.seed.unique())}")
 
     m_rep = 500 if 500 in df.m.values else int(df.m.median())
-    plot_metrics(df)
     plot_convergence(df, m_rep=m_rep, seed_rep=0)
 
 

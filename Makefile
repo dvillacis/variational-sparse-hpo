@@ -8,7 +8,7 @@ help:
 	@echo "  smoke      run synthetic tier with tiny/fast config (CI spot-check)"
 	@echo "  real       run exp6 real-data experiments (run 'make data' first)"
 	@echo "  all        run every experiment (heavy)"
-	@echo "  expN       run a single experiment, e.g. 'make exp3' (N=1..5)"
+	@echo "  expN       run a single experiment, e.g. 'make exp3' (N=1..4)"
 	@echo "  data       download Experiment 6 datasets (~790 MB)"
 	@echo "  test       run the vendored sparse_ho test suite"
 	@echo "  lint       ruff check"
@@ -32,7 +32,7 @@ real:
 all:
 	uv run python scripts/run_all.py --tier all
 
-# Single experiment: `make exp3` (works for exp1..exp5). For exp6 sub-runs use
+# Single experiment: `make exp3` (works for exp1..exp4). For exp6 sub-runs use
 # `uv run python scripts/run_experiment.py exp6-s3` etc.
 exp%:
 	uv run python scripts/run_experiment.py exp$*
