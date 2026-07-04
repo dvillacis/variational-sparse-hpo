@@ -72,6 +72,14 @@ NBA_STEP_SIZE    = 0.1
 TR_RADIUS0       = 0.1
 BIACTIVE_TOL_REL = 1e-3
 
+# Outer-loop convergence stop, applied identically to Sparse-HO (NBA) and NTRBA
+# (TR). None => disabled => fixed N_OUTER budget (reproduces the paper run).
+# When set, the outer loop stops once the best validation objective improves by
+# less than PLATEAU_RTOL (relative) over the last PLATEAU_PATIENCE iterations,
+# capped at N_OUTER. See run_s2_convergence.py.
+PLATEAU_PATIENCE = None
+PLATEAU_RTOL     = 1e-4
+
 # scalar_cv settings
 CV_FOLDS = 5
 CV_N_ALPHAS = 30   # reduced from 100 for speed; enough for comparison
@@ -536,7 +544,8 @@ def run_gradient_method(method_name, X, y, idx_train, idx_val, idx_test,
     if method_name == 'sparseho_wl1':
         algo = Implicit()
         optimizer = NormalizedSubgradient(
-            n_outer=N_OUTER, step_size=NBA_STEP_SIZE, tol=INNER_TOL_TR)
+            n_outer=N_OUTER, step_size=NBA_STEP_SIZE, tol=INNER_TOL_TR,
+            plateau_patience=PLATEAU_PATIENCE, plateau_rtol=PLATEAU_RTOL)
     elif method_name == 'nba_wl1':
         # variational oracle + normalized-subgradient optimizer: isolates the
         # oracle cost from the trust-region's extra per-iteration trial solve.
@@ -544,13 +553,15 @@ def run_gradient_method(method_name, X, y, idx_train, idx_val, idx_test,
             policy=select_biactive_self_consistent,
             biactive_tol_rel=BIACTIVE_TOL_REL)
         optimizer = NormalizedSubgradient(
-            n_outer=N_OUTER, step_size=NBA_STEP_SIZE, tol=INNER_TOL_TR)
+            n_outer=N_OUTER, step_size=NBA_STEP_SIZE, tol=INNER_TOL_TR,
+            plateau_patience=PLATEAU_PATIENCE, plateau_rtol=PLATEAU_RTOL)
     else:  # ntrba_wl1
         algo = ImplicitVariational(
             policy=select_biactive_self_consistent,
             biactive_tol_rel=BIACTIVE_TOL_REL)
         optimizer = TrustRegion(
-            n_outer=N_OUTER, radius0=TR_RADIUS0, tol=INNER_TOL_TR)
+            n_outer=N_OUTER, radius0=TR_RADIUS0, tol=INNER_TOL_TR,
+            plateau_patience=PLATEAU_PATIENCE, plateau_rtol=PLATEAU_RTOL)
 
     model = WeightedSparseLogReg(alpha_l2=alpha_l2)
     if keep_debug:

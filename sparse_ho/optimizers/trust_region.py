@@ -61,7 +61,8 @@ class TrustRegion(BaseOptimizer):
 	def __init__(
 			self, n_outer=100, radius0=1.0, radius_min=1e-12, radius_max=1e2,
 			eta_accept=0.1, eta_expand=0.75, gamma_dec=0.25, gamma_inc=2.0,
-			verbose=False, tol=1e-5, tol_decrease=None, t_max=10_000):
+			verbose=False, tol=1e-5, tol_decrease=None, t_max=10_000,
+			plateau_patience=None, plateau_rtol=1e-4):
 		self.n_outer = n_outer
 		self.radius0 = radius0
 		self.radius_min = radius_min
@@ -74,6 +75,8 @@ class TrustRegion(BaseOptimizer):
 		self.tol = tol
 		self.tol_decrease = tol_decrease
 		self.t_max = t_max
+		self.plateau_patience = plateau_patience
+		self.plateau_rtol = plateau_rtol
 		self.step_tol = 1e-12
 		self.history_ = []
 		self.termination_reason_ = None
@@ -103,6 +106,7 @@ class TrustRegion(BaseOptimizer):
 		self.final_radius_ = radius
 		self.n_fallback_tried_ = 0
 		self.n_fallback_accepted_ = 0
+		best_hist = []
 		value_outer, grad_outer = _get_val_grad(log_alphak, tols[0], monitor)
 		# Flag: when True the current (value_outer, grad_outer) was obtained from
 		# a trial evaluation that has already been accepted and the monitor has
@@ -137,6 +141,17 @@ class TrustRegion(BaseOptimizer):
 				record["stop_reason"] = "stationary"
 				self.history_.append(record)
 				self.termination_reason_ = "stationary"
+				self.final_radius_ = float(radius)
+				break
+
+			# outer-objective convergence (value_outer is monotone under the
+			# accept-only update, so best-so-far == current value)
+			best_hist.append(float(value_outer))
+			if self._plateau_stop(
+					best_hist, self.plateau_patience, self.plateau_rtol):
+				record["stop_reason"] = "obj_plateau"
+				self.history_.append(record)
+				self.termination_reason_ = "obj_plateau"
 				self.final_radius_ = float(radius)
 				break
 

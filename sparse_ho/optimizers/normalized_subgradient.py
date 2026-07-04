@@ -36,12 +36,15 @@ class NormalizedSubgradient(BaseOptimizer):
 
     def __init__(
             self, n_outer=60, step_size=1.0, tol=1e-5,
-            verbose=False, t_max=10_000):
+            verbose=False, t_max=10_000, plateau_patience=None,
+            plateau_rtol=1e-4):
         self.n_outer = n_outer
         self.step_size = step_size
         self.tol = tol
         self.verbose = verbose
         self.t_max = t_max
+        self.plateau_patience = plateau_patience
+        self.plateau_rtol = plateau_rtol
         self.history_ = []
         self.termination_reason_ = None
 
@@ -57,6 +60,7 @@ class NormalizedSubgradient(BaseOptimizer):
         self.history_ = []
         self.termination_reason_ = None
         value_outer, grad_outer = None, None
+        best_hist = []
 
         for i in range(self.n_outer):
             value_outer, grad_outer = _get_val_grad(log_alphak, self.tol, monitor)
@@ -73,6 +77,18 @@ class NormalizedSubgradient(BaseOptimizer):
                 record['stop_reason'] = 'stationary'
                 self.history_.append(record)
                 self.termination_reason_ = 'stationary'
+                break
+
+            # convergence of the outer objective (subgradient is non-monotone,
+            # so track the best-so-far value)
+            best_so_far = value_outer if not best_hist else min(
+                best_hist[-1], value_outer)
+            best_hist.append(best_so_far)
+            if self._plateau_stop(
+                    best_hist, self.plateau_patience, self.plateau_rtol):
+                record['stop_reason'] = 'obj_plateau'
+                self.history_.append(record)
+                self.termination_reason_ = 'obj_plateau'
                 break
 
             # fixed-step normalized subgradient
