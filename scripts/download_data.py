@@ -28,6 +28,8 @@ import sys
 import urllib.request
 from pathlib import Path
 
+import _ui as ui
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPE6 = REPO_ROOT / "expes_fb" / "expe6_real_world"
 DATA_DIR = EXPE6 / "data"
@@ -60,50 +62,51 @@ def download_manual(name):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     final = DATA_DIR / _LIBSVM_FILENAMES.get(name, name)
     if final.exists():
-        print(f"  · {name}: already present at {final.name}")
+        ui.info(f"{name}: already present ({final.name})")
         return True
     url = _LIBSVM_URLS.get(name)
     if url is None:
-        print(f"  ✗ {name}: no URL known (skipping)")
+        ui.fail(f"{name}: no URL known (skipping)")
         return False
 
     archive = DATA_DIR / url.rsplit("/", 1)[-1]
-    print(f"  ↓ {name}: {url}")
+    ui.step(name, [url])
     try:
         urllib.request.urlretrieve(url, archive, _report)
         sys.stdout.write("\n")
     except Exception as exc:  # noqa: BLE001 - surface any network/IO error
-        print(f"\n  ✗ {name}: download failed ({exc})")
+        sys.stdout.write("\n")
+        ui.fail(f"{name}: download failed ({exc})")
         return False
 
     if archive.suffix == ".bz2":
-        print(f"    decompressing {archive.name} -> {final.name}")
+        ui.info(f"decompressing {archive.name} → {final.name}")
         with bz2.open(archive, "rb") as src, open(final, "wb") as dst:
             shutil.copyfileobj(src, dst)
         archive.unlink()
     elif archive != final:
         archive.rename(final)
-    print(f"  ✓ {name}: {final}")
+    ui.ok(f"{name}  {ui.dim(str(final))}")
     return True
 
 
 def download_auto():
     ok = True
-    print("  ↓ rcv1 (scikit-learn fetch_rcv1)")
+    ui.step("rcv1", ["scikit-learn fetch_rcv1"])
     try:
         from data_loaders import load_rcv1
         load_rcv1(DATA_DIR)
-        print("  ✓ rcv1")
+        ui.ok("rcv1")
     except Exception as exc:  # noqa: BLE001
-        print(f"  ✗ rcv1: {exc}")
+        ui.fail(f"rcv1: {exc}")
         ok = False
-    print("  ↓ mnist (libsvmdata)")
+    ui.step("mnist", ["libsvmdata"])
     try:
         from data_loaders import load_libsvmdata_binary
         load_libsvmdata_binary("mnist")
-        print("  ✓ mnist")
+        ui.ok("mnist")
     except Exception as exc:  # noqa: BLE001
-        print(f"  ✗ mnist: {exc}")
+        ui.fail(f"mnist: {exc}")
         ok = False
     return ok
 
@@ -119,10 +122,12 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     if args.list:
-        print("auto (library-managed cache):  rcv1, mnist")
-        print("manual LIBSVM files -> expes_fb/expe6_real_world/data/")
+        ui.header("Auto datasets", "library-managed cache")
+        ui.info("rcv1, mnist")
+        ui.header("Manual LIBSVM files", "expes_fb/expe6_real_world/data/")
         for name in DEFAULT_MANUAL:
-            print(f"  {name:20s} ~{APPROX_MB.get(name, '?')} MB")
+            size = f"~{APPROX_MB.get(name, '?')} MB"
+            print(f"  {ui.cyan(name.ljust(20))} {ui.grey(size)}")
         return 0
 
     do_auto = not args.manual
@@ -131,14 +136,17 @@ def main(argv=None):
 
     ok = True
     if do_auto:
-        print("== auto datasets ==")
+        ui.header("📥 Auto datasets", "rcv1, mnist")
         ok = download_auto() and ok
     if do_manual:
-        print(f"== manual LIBSVM files -> {DATA_DIR} ==")
+        ui.header("📥 Manual LIBSVM files", str(DATA_DIR))
         for name in manual_set:
             ok = download_manual(name) and ok
 
-    print("\ndone." if ok else "\ndone with errors (see above).")
+    if ok:
+        ui.beer("Datasets ready")
+    else:
+        ui.error("Some downloads failed (see above)")
     return 0 if ok else 1
 
 

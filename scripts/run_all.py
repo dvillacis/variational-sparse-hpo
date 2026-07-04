@@ -27,6 +27,8 @@ import sys
 import time
 from pathlib import Path
 
+import _ui as ui
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPES = REPO_ROOT / "expes_fb"
 PY = sys.executable
@@ -128,10 +130,6 @@ REGISTRY = {
 }
 
 
-def log(msg):
-    print(msg, flush=True)
-
-
 def resolve_ids(tier, only):
     if only:
         ids = []
@@ -152,7 +150,7 @@ def resolve_ids(tier, only):
 
 def run_step(exp, st, *, smoke, skip_run, parallel):
     if skip_run and st["kind"] == "run":
-        log(f"    · skip {st['script']} (--skip-run)")
+        ui.info(f"skip {st['script']} (--skip-run)")
         return True
 
     script = st["script"]
@@ -165,25 +163,25 @@ def run_step(exp, st, *, smoke, skip_run, parallel):
         env.update(st["smoke_env"])
         args += st["smoke_args"]
 
-    cmd = [PY, script, *args]
-    log(f"    $ ({exp['dir']}) {' '.join(cmd[1:])}")
+    ui.step(script, args)
     t0 = time.time()
-    proc = subprocess.run(cmd, cwd=EXPES / exp["dir"], env=env)
+    proc = subprocess.run([PY, script, *args], cwd=EXPES / exp["dir"], env=env)
     dt = time.time() - t0
     if proc.returncode != 0:
-        log(f"    ✗ {script} failed (exit {proc.returncode}, {dt:.1f}s)")
+        ui.fail(f"{script}  (exit {proc.returncode}, {dt:.1f}s)")
         return False
-    log(f"    ✓ {script} ({dt:.1f}s)")
+    ui.ok(f"{script}  {ui.dim(f'{dt:.1f}s')}")
     return True
 
 
-def run_experiment(exp_id, *, smoke=False, skip_run=False, parallel=False):
+def run_experiment(exp_id, *, smoke=False, skip_run=False, parallel=False,
+                   index=None, total=None):
     exp = REGISTRY[exp_id]
+    tag = f"{index}/{total}  " if index and total else ""
+    ui.header(f"{tag}{exp_id}", exp["desc"])
     if smoke and exp.get("smoke_skip"):
-        log(f"[{exp_id}] SKIPPED under --smoke (no smoke knob; heavy real-data run). "
-            f"Run without --smoke to execute the full job.")
+        ui.skipped("skipped under --smoke (no smoke knob; heavy real-data run)")
         return "skipped"
-    log(f"[{exp_id}] {exp['desc']}")
     for st in exp["steps"]:
         if not run_step(exp, st, smoke=smoke, skip_run=skip_run, parallel=parallel):
             return "failed"
@@ -208,27 +206,44 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     if args.list:
+        ui.header("Experiments")
         for k, v in REGISTRY.items():
-            print(f"  {k:10s} [{v['tier']:9s}] {v['desc']}")
+            print(f"  {ui.cyan(k.ljust(10))}  {ui.grey(v['tier'].ljust(9))}  {v['desc']}")
         return 0
 
     ids = resolve_ids(args.tier, args.only)
-    log(f"== running {len(ids)} experiment(s): {', '.join(ids)} "
-        f"(smoke={args.smoke}, skip_run={args.skip_run}, parallel={args.parallel}) ==")
+    scope = args.tier if not args.only else "custom"
+    bits = ["smoke" if args.smoke else "full", scope]
+    if args.skip_run:
+        bits.append("skip-run")
+    if args.parallel:
+        bits.append("parallel")
+    ui.header(f"🧪 Running {len(ids)} experiment(s)", " · ".join(bits))
+    ui.info(", ".join(ids))
 
     results = {}
     t0 = time.time()
-    for exp_id in ids:
+    for n, exp_id in enumerate(ids, 1):
         results[exp_id] = run_experiment(
-            exp_id, smoke=args.smoke, skip_run=args.skip_run, parallel=args.parallel
-        )
+            exp_id, smoke=args.smoke, skip_run=args.skip_run,
+            parallel=args.parallel, index=n, total=len(ids))
 
-    log(f"\n== summary ({time.time() - t0:.1f}s total) ==")
+    elapsed = time.time() - t0
+    ui.header("Summary", f"{elapsed:.1f}s")
+    emoji = {"ok": "✅", "failed": "❌", "skipped": "⏭️"}
     for exp_id, status in results.items():
-        mark = {"ok": "✓", "failed": "✗", "skipped": "·"}[status]
-        log(f"  {mark} {exp_id}: {status}")
+        print(f"  {emoji[status]}  {exp_id}")
 
-    return 1 if any(s == "failed" for s in results.values()) else 0
+    n_ok = sum(s == "ok" for s in results.values())
+    n_fail = sum(s == "failed" for s in results.values())
+    n_skip = sum(s == "skipped" for s in results.values())
+    if n_fail:
+        tail = (f", {n_ok} ok" if n_ok else "") + (f", {n_skip} skipped" if n_skip else "")
+        ui.error(f"{n_fail} experiment(s) failed{tail}")
+        return 1
+    tail = f" ({n_skip} skipped)" if n_skip else ""
+    ui.beer(f"All {n_ok} experiment(s) succeeded in {elapsed:.1f}s{tail}")
+    return 0
 
 
 if __name__ == "__main__":
