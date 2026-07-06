@@ -5,7 +5,7 @@ Sparse-HO (subgradient) and NTRBA (trust region), both under the shared plateau
 stop. It visualizes the key point: NTRBA's objective plateaus and it STOPS early
 (marker), while the subgradient is still descending at the budget cap.
 
-Reads results/setting2_convergence/results.pkl (needs `val_objs`).
+Reads results/<TAG>/results.pkl (needs `val_objs`); TAG below.
 
 Usage
 -----

@@ -51,11 +51,27 @@ NUM_KEYS = {'test_f1', 'sparsity', 'n_iter', 't_per_iter', 'elapsed'}
 
 
 def _merged():
-    old = pd.read_pickle(RES / 'setting2' / 'results.pkl')
     conv = pd.read_pickle(RES / SRC_TAG / 'results.pkl')
-    scalar = old[old.method == 'scalar_cv']
-    grad = conv[conv.method.isin(['sparseho_wl1', 'ntrba_wl1'])]
-    return pd.concat([scalar, grad], ignore_index=True)
+    grad = conv[conv.method.isin(['sparseho_wl1', 'ntrba_wl1'])].copy()
+    # The scalar_cv reference is the band-independent fixed-budget paper run; it is
+    # optional here (expensive to reproduce, absent on a fresh checkout). Include it
+    # only if present, otherwise the table is Sparse-HO vs NTRBA.
+    old_pkl = RES / 'setting2' / 'results.pkl'
+    if old_pkl.exists():
+        scalar = pd.read_pickle(old_pkl)
+        scalar = scalar[scalar.method == 'scalar_cv']
+        return pd.concat([scalar, grad], ignore_index=True)
+    return grad
+
+
+def _infer_cap(df):
+    """The outer-iteration cap = the largest n_iter among runs that hit the budget
+    (termination 'completed'), so the caption matches the data actually produced."""
+    if 'termination' in df:
+        comp = df[df.termination == 'completed']
+        if len(comp):
+            return int(round(comp.n_iter.max()))
+    return None
 
 
 def _term_label(block):
@@ -70,10 +86,18 @@ def _term_label(block):
 def build():
     df = _merged()
     datasets = [d for d in T.S2_DATASETS if d in set(df.dataset.unique())]
+    present = set(df.method.unique())
+    methods = [m for m in T.S2_METHODS if m in present]
+    cap = _infer_cap(df)
+    cap_tex = str(cap) if cap else 'the'
+    scalar_note = (
+        r'The scalar baseline (cross-validation search) is the fixed-budget '
+        r'reference from the paper run; only its total time is comparable. '
+        if 'scalar_cv' in methods else '')
 
     stats, terms = {}, {}
     for d in datasets:
-        for m in T.S2_METHODS:
+        for m in methods:
             b = df[(df.dataset == d) & (df.method == m)]
             for k, _, _, _, kind in COLS:
                 if kind == 'term':
@@ -84,9 +108,9 @@ def build():
     best = {}
     for k, _, lo, _, kind in COLS:
         if k in SHADE_KEYS:
-            methods = ['sparseho_wl1', 'ntrba_wl1'] if k in ('t_per_iter', 'elapsed') \
-                else T.S2_METHODS
-            best[k] = T._best(stats, datasets, methods, k, lo)
+            shade_methods = ['sparseho_wl1', 'ntrba_wl1'] if k in ('t_per_iter', 'elapsed') \
+                else methods
+            best[k] = T._best(stats, datasets, shade_methods, k, lo)
 
     colspec = 'll' + ''.join('l' if kind == 'term' else 'r'
                              for _, _, _, _, kind in COLS)
@@ -96,15 +120,14 @@ def build():
          r'    Experiment~5 Setting~2, run to convergence: real-world classification benchmarks',
          r'    (mean\,\textpm\,std over random splits). Both gradient methods use the same outer',
          r'    convergence stop---terminate when the best validation objective improves by less than',
-         r'    $10^{-4}$ (relative) over $5$ consecutive outer iterations---capped at $100$ outer',
+         rf'    $10^{{-4}}$ (relative) over $5$ consecutive outer iterations---capped at ${cap_tex}$ outer',
          r'    iterations, and are timed in one clean run. \emph{It.}\ is outer iterations run,',
          r'    \emph{Stop} the termination criterion (\texttt{plat.}: objective plateau; \texttt{step}:',
-         r'    trust-region step below tolerance; \texttt{cap}: reached the $100$-iteration budget',
+         rf'    trust-region step below tolerance; \texttt{{cap}}: reached the ${cap_tex}$-iteration budget',
          r'    without converging), and \emph{t/it}/\emph{Total} are wall-clock seconds per iteration',
          r'    and in total. \texttt{NTRBA} reaches its plateau in $\sim\!20$ iterations; the',
          r'    fixed-step subgradient \texttt{Sparse-HO} runs to the cap without converging, yet',
-         r'    reaches comparable test F1. The scalar baseline (cross-validation search) is the',
-         r'    fixed-budget reference from the paper run; only its total time is comparable. Gray',
+         rf'    reaches comparable test F1. {scalar_note}Gray',
          r'    shading marks the best value within each dataset block.}',
          r'  \label{tab:expe5_setting2}',
          rf'  \begin{{tabular}}{{{colspec}}}', r'    \toprule',
@@ -114,8 +137,8 @@ def build():
          r'    \midrule']
 
     for di, d in enumerate(datasets):
-        for mi, m in enumerate(T.S2_METHODS):
-            row = [rf'\multirow{{{len(T.S2_METHODS)}}}{{*}}{{{T.S2_DLABEL[d]}}}' if mi == 0 else '',
+        for mi, m in enumerate(methods):
+            row = [rf'\multirow{{{len(methods)}}}{{*}}{{{T.S2_DLABEL[d]}}}' if mi == 0 else '',
                    T.S2_MLABEL[m]]
             for k, _, _, sp, kind in COLS:
                 if kind == 'term':
