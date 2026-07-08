@@ -98,7 +98,12 @@ EFF = [('n_iter', r'It.', True, '.0f', False, True),
 
 
 def build_s1():
-    df = pd.read_pickle(RES / 'setting1_scalefree' / 'results.pkl')
+    # run_s1.py writes to results/setting1/ (scale-free band is the default);
+    # fall back to the legacy tagged dir used by the old repo.
+    s1_dir = RES / 'setting1'
+    if not (s1_dir / 'results.pkl').exists():
+        s1_dir = RES / 'setting1_scalefree'
+    df = pd.read_pickle(s1_dir / 'results.pkl')
     datasets = [d for d in S1_DATASETS if d in set(df.dataset.unique())]
     cols = S1_SCI + [(k, h, lo, sp) for (k, h, lo, sp, _, _) in EFF]
     stats = {}
