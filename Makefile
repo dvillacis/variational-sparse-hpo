@@ -8,11 +8,14 @@ help:
 	@echo "  smoke      run synthetic tier with tiny/fast config (CI spot-check)"
 	@echo "  real       run exp6 real-data experiments (run 'make data' first)"
 	@echo "  all        run every experiment (heavy)"
-	@echo "  expN       run a single experiment, e.g. 'make exp3' (N=1..4)"
+	@echo "  expN       run a single experiment, e.g. 'make exp3' or 'make exp6-conv'"
+	@echo "  rebuild-ID from-scratch rebuild of one experiment (wipe its results, then run),"
+	@echo "             e.g. 'make rebuild-exp3', 'make rebuild-exp6-conv'"
+	@echo "  clean-ID   wipe one experiment's results without running, e.g. 'make clean-exp6-conv'"
 	@echo "  data       download Experiment 6 datasets (~790 MB)"
 	@echo "  test       run the vendored sparse_ho test suite"
 	@echo "  lint       ruff check"
-	@echo "  clean      remove results/ dirs and caches"
+	@echo "  clean      remove ALL results/ dirs and caches"
 
 install:
 	uv sync
@@ -36,6 +39,15 @@ all:
 # `uv run python scripts/run_experiment.py exp6-diag` etc.
 exp%:
 	uv run python scripts/run_experiment.py exp$*
+
+# From-scratch rebuild of ONE experiment: wipe just its results, then run.
+# Stem is the full id: `make rebuild-exp3`, `make rebuild-exp6-conv`.
+rebuild-%:
+	uv run python scripts/run_experiment.py $* --clean
+
+# Wipe ONE experiment's results without running: `make clean-exp6-conv`.
+clean-%:
+	uv run python scripts/run_experiment.py $* --clean-only
 
 data:
 	uv run python scripts/download_data.py

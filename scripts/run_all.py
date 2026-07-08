@@ -22,6 +22,7 @@ Exit code is non-zero if any step fails.
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -47,9 +48,11 @@ def _step(kind, script, args=None, smoke_env=None, smoke_args=None):
     }
 
 
-# Registry: experiment id -> {dir, tier, desc, steps, [parallel], [smoke_skip]}.
+# Registry: experiment id -> {dir, tier, desc, steps, [parallel], [smoke_skip], [clean]}.
 # `parallel` names an alternate joblib driver used for the run step under --parallel.
 # `smoke_skip` marks heavy experiments with no smoke knob (skipped under --smoke).
+# `clean` lists result paths (relative to `dir`) removed by --clean for a from-scratch
+# build; defaults to ["results"]. exp6-* share one dir, so each names its own tag.
 REGISTRY = {
     "exp1": {
         "dir": "expe1_illustrative",
@@ -102,6 +105,7 @@ REGISTRY = {
         "tier": "real",
         "smoke_skip": True,
         "desc": "Exp5 Setting 1 semi-synthetic -> tab:expe5_setting1 (heavy; no smoke)",
+        "clean": ["results/setting1"],
         "steps": [
             _step("run", "run_s1.py"),
             _step("table", "table_s1.py"),
@@ -112,6 +116,7 @@ REGISTRY = {
         "tier": "real",
         "smoke_skip": True,
         "desc": "Exp5 Setting 2 real classification -> tab:expe5_setting2 (heavy; no smoke)",
+        "clean": ["results/setting2"],
         "steps": [
             _step("run", "run_s2.py"),
             _step("table", "table_s2.py"),
@@ -122,6 +127,7 @@ REGISTRY = {
         "dir": "expe6_real_world",
         "tier": "real",
         "desc": "biactivity diagnostic -> tab:biactivity_diagnostic",
+        "clean": ["results/biactivity_scan"],
         "steps": [
             _step("run", "scan_biactivity.py", smoke_args=["--max-samples", "2000"]),
             _step("table", "table_biactivity_diagnostic.py"),
@@ -136,6 +142,7 @@ REGISTRY = {
         # scalar_cv rows are folded in as a reference. --cap/--tag must agree.
         "desc": "Setting 2 convergence study (plateau stop, cap 100) -> "
                 "table_s2_cap100.tex, fig_s2_convergence.pdf",
+        "clean": ["results/setting2_cap100"],
         "steps": [
             _step("run", "run_s2_convergence.py",
                   args=["--cap", "100", "--tag", "setting2_cap100"]),
@@ -162,6 +169,23 @@ def resolve_ids(tier, only):
     if tier == "all":
         return list(REGISTRY)
     return [k for k, v in REGISTRY.items() if v["tier"] == tier]
+
+
+def clean_experiment(exp_id):
+    """Remove an experiment's result paths (registry `clean`, default ["results"])
+    for a from-scratch rebuild. Refuses any path outside the experiment directory."""
+    exp = REGISTRY[exp_id]
+    base = (EXPES / exp["dir"]).resolve()
+    removed = []
+    for rel in exp.get("clean", ["results"]):
+        p = (base / rel).resolve()
+        if base != p and base not in p.parents:
+            ui.info(f"refusing unsafe clean path: {rel}")
+            continue
+        if p.exists():
+            shutil.rmtree(p) if p.is_dir() else p.unlink()
+            removed.append(rel)
+    ui.info("cleaned " + (", ".join(removed) if removed else "(nothing present)"))
 
 
 def run_step(exp, st, *, smoke, skip_run, parallel):
@@ -191,13 +215,15 @@ def run_step(exp, st, *, smoke, skip_run, parallel):
 
 
 def run_experiment(exp_id, *, smoke=False, skip_run=False, parallel=False,
-                   index=None, total=None):
+                   clean=False, index=None, total=None):
     exp = REGISTRY[exp_id]
     tag = f"{index}/{total}  " if index and total else ""
     ui.header(f"{tag}{exp_id}", exp["desc"])
     if smoke and exp.get("smoke_skip"):
         ui.skipped("skipped under --smoke (no smoke knob; heavy real-data run)")
         return "skipped"
+    if clean:
+        clean_experiment(exp_id)
     for st in exp["steps"]:
         if not run_step(exp, st, smoke=smoke, skip_run=skip_run, parallel=parallel):
             return "failed"
@@ -216,6 +242,10 @@ def main(argv=None):
                    help="tiny/fast configuration for CI and spot-checks")
     p.add_argument("--skip-run", action="store_true",
                    help="skip the compute step; regenerate figures/tables from cached .pkl")
+    p.add_argument("--clean", action="store_true",
+                   help="wipe each selected experiment's results first (from-scratch build)")
+    p.add_argument("--clean-only", action="store_true",
+                   help="wipe selected experiments' results and exit (no run)")
     p.add_argument("--parallel", action="store_true",
                    help="use joblib run_parallel.py drivers for exp2/3/4 (full runs only)")
     p.add_argument("--list", action="store_true", help="list experiments and exit")
@@ -227,9 +257,24 @@ def main(argv=None):
             print(f"  {ui.cyan(k.ljust(10))}  {ui.grey(v['tier'].ljust(9))}  {v['desc']}")
         return 0
 
+    if args.clean and args.skip_run:
+        ui.error("--clean and --skip-run are mutually exclusive "
+                 "(clean removes the cached results a skip-run would reuse)")
+        return 2
+
     ids = resolve_ids(args.tier, args.only)
+
+    if args.clean_only:
+        ui.header(f"🧹 Cleaning {len(ids)} experiment(s)", ", ".join(ids))
+        for exp_id in ids:
+            ui.step(exp_id, [])
+            clean_experiment(exp_id)
+        return 0
+
     scope = args.tier if not args.only else "custom"
     bits = ["smoke" if args.smoke else "full", scope]
+    if args.clean:
+        bits.append("clean")
     if args.skip_run:
         bits.append("skip-run")
     if args.parallel:
@@ -242,7 +287,7 @@ def main(argv=None):
     for n, exp_id in enumerate(ids, 1):
         results[exp_id] = run_experiment(
             exp_id, smoke=args.smoke, skip_run=args.skip_run,
-            parallel=args.parallel, index=n, total=len(ids))
+            parallel=args.parallel, clean=args.clean, index=n, total=len(ids))
 
     elapsed = time.time() - t0
     ui.header("Summary", f"{elapsed:.1f}s")
