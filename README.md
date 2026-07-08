@@ -69,6 +69,29 @@ make exp4
 - The heavy real-data runs `exp6-s1`/`exp6-s2` have no smoke knob and are skipped
   under `--smoke`.
 
+### Rebuild or clean a single experiment
+
+`results/` is a cache: a plain `make exp4` resumes from any existing `.pkl`
+checkpoints. To force a **from-scratch** build — wipe one experiment's outputs, then
+re-run it — use the `rebuild-`/`clean-` targets (the id is the full experiment id,
+e.g. `exp3`, `exp6-conv`):
+
+```bash
+make rebuild-exp6-conv    # wipe just this experiment's results, then run + plot + table
+make clean-exp6-conv      # wipe just this experiment's results, without running
+make clean                # wipe ALL experiments' results and caches
+```
+
+Equivalent runner flags: `--clean` (wipe then run) and `--clean-only` (wipe and exit),
+e.g. `uv run python scripts/run_experiment.py exp6-conv --clean`.
+
+The clean is **per experiment, not per directory**: the four `exp6-*` experiments
+share `expe6_real_world/` but write to distinct result tags (`setting1`, `setting2`,
+`setting2_cap100`, `biactivity_scan`), so cleaning one never clobbers its siblings.
+Each experiment's output paths come from the `clean` field in the
+`scripts/run_all.py` registry (default `["results"]`); paths outside the experiment
+directory are refused, and `--clean` cannot be combined with `--skip-run`.
+
 ## Experiment → paper artifact map
 
 | Experiment id | Paper item | Figure | Table |
