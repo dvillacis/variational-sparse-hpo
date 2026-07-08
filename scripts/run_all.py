@@ -140,12 +140,13 @@ REGISTRY = {
         # Re-runs Setting 2 with the plateau outer-stop to show NTRBA converges
         # early. Self-contained (Sparse-HO vs NTRBA); if exp6-s2 has been run, its
         # scalar_cv rows are folded in as a reference. --cap/--tag must agree.
-        "desc": "Setting 2 convergence study (plateau stop, cap 100) -> "
-                "table_s2_cap100.tex, fig_s2_convergence.pdf",
-        "clean": ["results/setting2_cap100"],
+        # cap 60 = the paper's protocol (Table tab:expe5_setting2, Revision 2).
+        "desc": "Setting 2 convergence study (plateau stop, cap 60) -> "
+                "table_s2_cap60.tex, fig_s2_convergence.pdf",
+        "clean": ["results/setting2_cap60"],
         "steps": [
             _step("run", "run_s2_convergence.py",
-                  args=["--cap", "100", "--tag", "setting2_cap100"]),
+                  args=["--cap", "60", "--tag", "setting2_cap60"]),
             _step("table", "table_s2_convergence.py"),
             _step("plot", "plot_s2_convergence.py"),
         ],

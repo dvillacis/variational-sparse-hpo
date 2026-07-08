@@ -1,8 +1,8 @@
-"""Setting-2 table under the outer CONVERGENCE stop, capped at 100 (Option A).
+"""Setting-2 table under the outer CONVERGENCE stop, capped at 60 (Option A).
 
 Both gradient methods run with the same plateau early-stop (relative best-objective
-improvement < 1e-4 over 5 iters) capped at 100 outer iterations, and are timed in one
-clean run (results/setting2_cap100). A ``Stop`` column reports the termination
+improvement < 1e-4 over 5 iters) capped at 60 outer iterations, and are timed in one
+clean run (results/setting2_cap60). A ``Stop`` column reports the termination
 criterion so the reader sees which method actually converged: NTRBA reaches its
 objective plateau early, while the fixed-step subgradient runs to the cap without
 converging. scalar_cv is the fixed-budget reference from the paper run
@@ -22,8 +22,8 @@ import pandas as pd
 import table_common_clock as T   # reuse helpers, S2_* config
 
 RES = T.RES
-SRC_TAG = 'setting2_cap100'
-OUT = RES / SRC_TAG / 'table_s2_cap100.tex'
+SRC_TAG = 'setting2_cap60'
+OUT = RES / SRC_TAG / 'table_s2_cap60.tex'
 
 # termination_reason_ -> short table label
 TERM_LABEL = {

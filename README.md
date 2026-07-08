@@ -103,7 +103,7 @@ directory are refused, and `--clean` cannot be combined with `--skip-run`.
 | `exp6-s1` | Experiment 5, Setting 1 (semi-synthetic) | — | `tab:expe5_setting1`, `tab:expe5_dataset_stats` |
 | `exp6-s2` | Experiment 5, Setting 2 (real classification) | — | `tab:expe5_setting2` |
 | `exp6-diag` | Diagnostic (natural biactivity) | — | `tab:biactivity_diagnostic` |
-| `exp6-conv` | Setting 2 convergence study (plateau early-stop; not in manuscript) | `fig_s2_convergence.pdf` | `table_s2_cap100.tex` |
+| `exp6-conv` | Setting 2 convergence study (plateau early-stop, cap 60) | `fig_s2_convergence.pdf` | `table_s2_cap60.tex` (`tab:expe5_setting2`) |
 | `st_plot` | Theory figure (soft-thresholding coderivative) | `graph_soft_thresholding.pdf` | — |
 
 Figures/tables are written to each experiment's `results/` folder (git-ignored).

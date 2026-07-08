@@ -28,7 +28,7 @@ from expes_fb.shared.plotting import (               # noqa: E402
     apply_plot_style, figure_size, get_method_style)
 
 HERE = Path(__file__).parent
-TAG = 'setting2_cap100'
+TAG = 'setting2_cap60'
 PKL = HERE / 'results' / TAG / 'results.pkl'
 OUT = HERE / 'results' / TAG / 'fig_s2_convergence.pdf'
 
