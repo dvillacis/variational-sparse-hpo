@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "variational-sparse-hpo"
-version = "0.1.0"
+version = "1.0.0"
 description = "Companion code for 'A Variational Analysis Approach for Bilevel Hyperparameter Optimization with Sparse Regularization' (COAP)."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -46,7 +46,8 @@ dependencies = [
 reference = ["torch", "cvxpy", "cvxpylayers"]
 
 [project.urls]
-Repository = "https://github.com/dvillacis/sparse-ho-fb"
+Homepage = "https://github.com/dvillacis/variational-sparse-hpo"
+Repository = "https://github.com/dvillacis/variational-sparse-hpo"
 
 [dependency-groups]
 dev = ["ruff>=0.15", "pytest>=8", "pytest-cov>=5"]

@@ -1,0 +1,37 @@
+{
+  "upload_type": "software",
+  "title": "variational-sparse-hpo: companion code for \"A Variational Analysis Approach for Bilevel Hyperparameter Optimization with Sparse Regularization\"",
+  "description": "<p>Reproducible companion code for the paper <em>A Variational Analysis Approach for Bilevel Hyperparameter Optimization with Sparse Regularization</em> (Computational Optimization and Applications, Special Issue on Machine Learning and Optimization).</p><p>The core library is a self-contained fork of <a href=\"https://github.com/QB3/sparse-ho\">QB3/sparse-ho</a> (BSD-3-Clause) extended with: weighted per-feature sparse models (<code>WeightedElasticNet</code>, <code>WeightedSparseLogReg</code>); a support-reduced variational hypergradient (<code>ImplicitVariational</code>) with sign-consistent / biactive-set selection; and nonsmooth outer optimizers (trust-region NTRBA and normalized subgradient NBA). The repository reproduces every figure and table in the paper's numerical section.</p>",
+  "creators": [
+    {
+      "name": "Pérez-Aros, Pedro",
+      "affiliation": "TODO — add affiliation before publishing"
+    },
+    {
+      "name": "Vilches, Emilio",
+      "affiliation": "TODO — add affiliation before publishing"
+    },
+    {
+      "name": "Villacís, David",
+      "affiliation": "TODO — add affiliation before publishing"
+    }
+  ],
+  "access_right": "open",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "bilevel optimization",
+    "hyperparameter optimization",
+    "sparse regularization",
+    "variational analysis",
+    "forward-backward envelope",
+    "coderivative"
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isDerivedFrom",
+      "identifier": "https://github.com/QB3/sparse-ho",
+      "scheme": "url"
+    }
+  ],
+  "version": "1.0.0"
+}

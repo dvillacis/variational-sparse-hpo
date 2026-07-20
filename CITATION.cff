@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite both the software (this record) and the
+  accompanying paper (see `preferred-citation`).
+title: >-
+  variational-sparse-hpo: companion code for "A Variational Analysis Approach for
+  Bilevel Hyperparameter Optimization with Sparse Regularization"
+abstract: >-
+  Reproducible companion code for the COAP paper. A self-contained fork of
+  sparse-ho extended with weighted (per-feature) sparse models, a support-reduced
+  variational hypergradient with sign-consistent / biactive-set selection, and
+  nonsmooth outer optimizers (trust-region NTRBA and normalized subgradient NBA).
+  Reproduces every figure and table in the paper's numerical section.
+type: software
+version: 1.0.0
+date-released: "2026-07-19"
+license: BSD-3-Clause
+repository-code: "https://github.com/dvillacis/variational-sparse-hpo"
+authors:
+  - family-names: Pérez-Aros
+    given-names: Pedro
+    # TODO before minting the DOI — uncomment and fill:
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # affiliation: "Affiliation"
+  - family-names: Vilches
+    given-names: Emilio
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # affiliation: "Affiliation"
+  - family-names: Villacís
+    given-names: David
+    email: david@villacis.net
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # affiliation: "Affiliation"
+keywords:
+  - bilevel optimization
+  - hyperparameter optimization
+  - sparse regularization
+  - variational analysis
+  - forward-backward envelope
+  - coderivative
+preferred-citation:
+  type: article
+  title: >-
+    A Variational Analysis Approach for Bilevel Hyperparameter Optimization with
+    Sparse Regularization
+  authors:
+    - family-names: Pérez-Aros
+      given-names: Pedro
+    - family-names: Vilches
+      given-names: Emilio
+    - family-names: Villacís
+      given-names: David
+  journal: "Computational Optimization and Applications"
+  # Special Issue on Machine Learning and Optimization.
+  year: 2026
+  # TODO before minting the DOI — uncomment and fill once the article DOI is assigned:
+  # doi: "10.xxxx/xxxxx"

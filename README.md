@@ -104,6 +104,8 @@ directory are refused, and `--clean` cannot be combined with `--skip-run`.
 | `exp6-s2` | Experiment 5, Setting 2 (real classification) | — | `tab:expe5_setting2` |
 | `exp6-diag` | Diagnostic (natural biactivity) | — | `tab:biactivity_diagnostic` |
 | `exp6-conv` | Setting 2 convergence study (plateau early-stop, cap 60) | `fig_s2_convergence.pdf` | `table_s2_cap60.tex` (`tab:expe5_setting2`) |
+| `exp6-conv-bio` | Setting 2b: naturally biactive datasets, same protocol (10 seeds, stratified splits) | — | 2b block of `table_s2_cap60.tex` |
+| `exp7` | Certificate soundness (replaces the §5.5 biactivity diagnostic) | `fig_certificate_soundness.pdf` | `tab:certificate_soundness` |
 | `st_plot` | Theory figure (soft-thresholding coderivative) | `graph_soft_thresholding.pdf` | — |
 
 Figures/tables are written to each experiment's `results/` folder (git-ignored).
@@ -167,6 +169,19 @@ scripts/
 docs/
   experimental_strategy.md   authoritative experiment specification
 ```
+
+## Citation
+
+If you use this code, please cite **both** the software and the paper. Machine-readable
+metadata lives in [`CITATION.cff`](CITATION.cff) (GitHub renders a "Cite this repository"
+button from it).
+
+- **Software** (this archive): the release is deposited on Zenodo; cite the versioned DOI
+  shown on the deposit page. <!-- TODO: paste the Zenodo DOI badge/URL here after the first release. -->
+- **Paper**: Pedro Pérez-Aros, Emilio Vilches, David Villacís, *A Variational Analysis
+  Approach for Bilevel Hyperparameter Optimization with Sparse Regularization*,
+  Computational Optimization and Applications (COAP), Special Issue on Machine Learning
+  and Optimization.
 
 ## Attribution & license
 
