@@ -16,6 +16,7 @@ version: 1.0.0
 date-released: "2026-07-19"
 license: BSD-3-Clause
 repository-code: "https://github.com/dvillacis/variational-sparse-hpo"
+doi: 10.5281/zenodo.21447597
 authors:
   - family-names: Pérez-Aros
     given-names: Pedro

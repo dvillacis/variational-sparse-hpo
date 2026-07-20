@@ -1,5 +1,7 @@
 # variational-sparse-hpo
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21447597.svg)](https://doi.org/10.5281/zenodo.21447597)
+
 Companion code for the paper
 
 > **A Variational Analysis Approach for Bilevel Hyperparameter Optimization with
@@ -176,8 +178,10 @@ If you use this code, please cite **both** the software and the paper. Machine-r
 metadata lives in [`CITATION.cff`](CITATION.cff) (GitHub renders a "Cite this repository"
 button from it).
 
-- **Software** (this archive): the release is deposited on Zenodo; cite the versioned DOI
-  shown on the deposit page. <!-- TODO: paste the Zenodo DOI badge/URL here after the first release. -->
+- **Software** (this archive): archived on Zenodo. Cite the concept DOI
+  [10.5281/zenodo.21447597](https://doi.org/10.5281/zenodo.21447597), which always
+  resolves to the latest version (the v1.0.0 record is
+  [10.5281/zenodo.21447598](https://doi.org/10.5281/zenodo.21447598)).
 - **Paper**: Pedro Pérez-Aros, Emilio Vilches, David Villacís, *A Variational Analysis
   Approach for Bilevel Hyperparameter Optimization with Sparse Regularization*,
   Computational Optimization and Applications (COAP), Special Issue on Machine Learning
