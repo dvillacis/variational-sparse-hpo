@@ -11,8 +11,13 @@ converging. scalar_cv is the fixed-budget reference from the paper run
 Usage
 -----
     python table_s2_convergence.py
+    # Setting 2b (naturally biactive datasets) appended as a second block:
+    python table_s2_convergence.py \
+        --src-tags setting2_cap60 setting2_biactive \
+        --scalar-tags setting2 setting2_biactive_scalar
 """
 
+import argparse
 from collections import Counter
 from pathlib import Path
 
@@ -22,8 +27,8 @@ import pandas as pd
 import table_common_clock as T   # reuse helpers, S2_* config
 
 RES = T.RES
-SRC_TAG = 'setting2_cap60'
-OUT = RES / SRC_TAG / 'table_s2_cap60.tex'
+DEFAULT_SRC_TAGS = ['setting2_cap60']
+DEFAULT_SCALAR_TAGS = ['setting2']
 
 # termination_reason_ -> short table label
 TERM_LABEL = {
@@ -50,17 +55,29 @@ SHADE_KEYS = {'test_f1', 'sparsity', 't_per_iter', 'elapsed'}
 NUM_KEYS = {'test_f1', 'sparsity', 'n_iter', 't_per_iter', 'elapsed'}
 
 
-def _merged():
-    conv = pd.read_pickle(RES / SRC_TAG / 'results.pkl')
+def _merged(src_tags, scalar_tags):
+    frames = []
+    for tag in src_tags:
+        pkl = RES / tag / 'results.pkl'
+        if pkl.exists():
+            frames.append(pd.read_pickle(pkl))
+        else:
+            print(f'WARNING: {pkl} missing, skipped')
+    if not frames:
+        raise FileNotFoundError(f'no results.pkl under {RES} for tags {src_tags}')
+    conv = pd.concat(frames, ignore_index=True)
     grad = conv[conv.method.isin(['sparseho_wl1', 'ntrba_wl1'])].copy()
     # The scalar_cv reference is the band-independent fixed-budget paper run; it is
     # optional here (expensive to reproduce, absent on a fresh checkout). Include it
     # only if present, otherwise the table is Sparse-HO vs NTRBA.
-    old_pkl = RES / 'setting2' / 'results.pkl'
-    if old_pkl.exists():
-        scalar = pd.read_pickle(old_pkl)
-        scalar = scalar[scalar.method == 'scalar_cv']
-        return pd.concat([scalar, grad], ignore_index=True)
+    scalars = []
+    for tag in scalar_tags:
+        pkl = RES / tag / 'results.pkl'
+        if pkl.exists():
+            s = pd.read_pickle(pkl)
+            scalars.append(s[s.method == 'scalar_cv'])
+    if scalars:
+        return pd.concat(scalars + [grad], ignore_index=True)
     return grad
 
 
@@ -83,9 +100,11 @@ def _term_label(block):
     return TERM_LABEL.get(mode, str(mode))
 
 
-def build():
-    df = _merged()
-    datasets = [d for d in T.S2_DATASETS if d in set(df.dataset.unique())]
+def build(df):
+    present_ds = set(df.dataset.unique())
+    std = [d for d in T.S2_DATASETS if d in present_ds]
+    bio = [d for d in T.S2B_DATASETS if d in present_ds]
+    datasets = std + bio
     present = set(df.method.unique())
     methods = [m for m in T.S2_METHODS if m in present]
     cap = _infer_cap(df)
@@ -94,6 +113,14 @@ def build():
         r'The scalar baseline (cross-validation search) is the fixed-budget '
         r'reference from the paper run; only its total time is comparable. '
         if 'scalar_cv' in methods else '')
+    # TODO(setting2b): once the biactive results exist, consider a B_cv column
+    # sourced from the exp6-diag scan so the table shows the diagnostic
+    # prediction next to the outcome (SETTING2_BIACTIVE_EXTENSION proposal).
+    bio_note = (
+        r'The lower block contains the naturally biactive datasets of the '
+        r'diagnostic (Table~\ref{tab:biactivity_diagnostic}), run under the '
+        r'same protocol with stratified splits. '
+        if bio and std else '')
 
     stats, terms = {}, {}
     for d in datasets:
@@ -127,7 +154,7 @@ def build():
          r'    without converging), and \emph{t/it}/\emph{Total} are wall-clock seconds per iteration',
          r'    and in total. \texttt{NTRBA} reaches its plateau in $\sim\!20$ iterations; the',
          r'    fixed-step subgradient \texttt{Sparse-HO} runs to the cap without converging, yet',
-         rf'    reaches comparable test F1. {scalar_note}Gray',
+         rf'    reaches comparable test F1. {scalar_note}{bio_note}Gray',
          r'    shading marks the best value within each dataset block.}',
          r'  \label{tab:expe5_setting2}',
          rf'  \begin{{tabular}}{{{colspec}}}', r'    \toprule',
@@ -136,7 +163,12 @@ def build():
          r'    Dataset & Method & ' + ' & '.join(h for _, h, _, _, _ in COLS) + r' \\',
          r'    \midrule']
 
+    n_cols = 2 + len(COLS)
     for di, d in enumerate(datasets):
+        if std and bio and d == bio[0]:
+            L.append(rf'    \multicolumn{{{n_cols}}}{{l}}{{\emph{{Naturally biactive '
+                     rf'datasets (cf.\ Table~\ref{{tab:biactivity_diagnostic}})}}}} \\')
+            L.append(r'    \midrule')
         for mi, m in enumerate(methods):
             row = [rf'\multirow{{{len(methods)}}}{{*}}{{{T.S2_DLABEL[d]}}}' if mi == 0 else '',
                    T.S2_MLABEL[m]]
@@ -163,15 +195,26 @@ def build():
 
 
 def main():
-    tex = build()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--src-tags', nargs='+', default=DEFAULT_SRC_TAGS,
+                    help='results/<tag>/results.pkl inputs for the gradient '
+                         'methods; add setting2_biactive for the 2b block.')
+    ap.add_argument('--scalar-tags', nargs='*', default=DEFAULT_SCALAR_TAGS,
+                    help='results/<tag>/results.pkl inputs for the scalar_cv '
+                         'reference rows (optional, skipped if absent).')
+    ap.add_argument('--out', default='table_s2_cap60.tex',
+                    help='Output filename, written under results/<first src tag>/.')
+    args = ap.parse_args()
+    tex = build(_merged(args.src_tags, args.scalar_tags))
     # 8 columns (adds Stop to the common-clock block) exceed the 372pt single
     # column; go landscape, matching Table tab:expe5_setting1. sn-jnl redefines
     # sidewaystable (auto center+threeparttable); rotating is in the preamble.
     tex = tex.replace(r'\begin{table}[t]', r'\begin{sidewaystable}', 1)
     tex = tex.replace(r'\end{table}', r'\end{sidewaystable}', 1)
-    OUT.write_text(tex + '\n')
+    out = RES / args.src_tags[0] / args.out
+    out.write_text(tex + '\n')
     print(tex)
-    print('\nsaved ->', OUT)
+    print('\nsaved ->', out)
 
 
 if __name__ == '__main__':

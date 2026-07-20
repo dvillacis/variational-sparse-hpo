@@ -171,9 +171,18 @@ def build_s1():
 # Setting 2
 # --------------------------------------------------------------------------- #
 S2_DATASETS = ['mnist', 'news20.binary', 'phishing', 'rcv1.binary', 'real-sim']
+# Setting 2b: naturally-biactive diagnostic datasets (tab:biactivity_diagnostic;
+# SETTING2_BIACTIVE_EXTENSION proposal). table_s2_convergence.py renders them as
+# a second block below the standard datasets; absent datasets are filtered out,
+# so tables built without the 2b run are unchanged.
+S2B_DATASETS = ['leukemia', 'colon-cancer', 'duke breast-cancer',
+                'madelon', 'a9a', 'splice']
 S2_DLABEL = {'mnist': r'\textsc{mnist} (0/1)', 'news20.binary': r'\textsc{news20}',
              'phishing': r'phishing', 'rcv1.binary': r'\textsc{rcv1.binary}',
-             'real-sim': r'\textsc{real-sim}'}
+             'real-sim': r'\textsc{real-sim}',
+             'leukemia': r'\textsc{leukemia}', 'colon-cancer': r'\textsc{colon}',
+             'duke breast-cancer': r'\textsc{duke}', 'madelon': r'\textsc{madelon}',
+             'a9a': r'\textsc{a9a}', 'splice': r'\textsc{splice}'}
 S2_METHODS = ['scalar_cv', 'sparseho_wl1', 'ntrba_wl1']
 S2_MLABEL = {'scalar_cv': r'Scalar $\ell_1$ (CV)',
              'sparseho_wl1': r'\texttt{Sparse-HO} ($w\ell_1$)',

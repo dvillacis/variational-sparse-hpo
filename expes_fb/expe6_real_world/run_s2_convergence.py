@@ -51,7 +51,7 @@ DATASET_ORDER = ['rcv1.binary', 'phishing', 'mnist', 'real-sim', 'news20.binary'
 
 def _one(dname, X, y, seed):
     n_total = X.shape[0]
-    idx_tr, idx_val, idx_te = _make_split(n_total, seed)
+    idx_tr, idx_val, idx_te = _make_split(n_total, seed, y=y)
     Xp, notes = _preprocess_features_for_split(dname, X, idx_tr)
     if issparse(Xp):
         Xp = Xp.tocsc()
@@ -87,6 +87,11 @@ def main():
                     help='results subdirectory tag')
     ap.add_argument('--patience', type=int, default=5)
     ap.add_argument('--rtol', type=float, default=1e-4)
+    ap.add_argument('--datasets', nargs='+', default=None,
+                    help='Override the dataset list '
+                         '(default: run_s2.DATASETS, fast-first order).')
+    ap.add_argument('--seeds', type=int, default=None,
+                    help='Number of random-split seeds (default: run_s2.N_SEEDS).')
     args = ap.parse_args()
 
     # apply config to the shared run_s2 module (read at optimizer construction)
@@ -97,10 +102,14 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     results_pkl = out / 'results.pkl'
 
-    datasets = [d for d in DATASET_ORDER if d in DATASETS] + \
-        [d for d in DATASETS if d not in DATASET_ORDER]
+    if args.datasets:
+        datasets = list(args.datasets)
+    else:
+        datasets = [d for d in DATASET_ORDER if d in DATASETS] + \
+            [d for d in DATASETS if d not in DATASET_ORDER]
+    n_seeds = args.seeds if args.seeds is not None else N_SEEDS
     _log(f"re-run: cap={args.cap} patience={args.patience} rtol={args.rtol} "
-         f"tag={args.tag} datasets={datasets} seeds={N_SEEDS}")
+         f"tag={args.tag} datasets={datasets} seeds={n_seeds}")
     all_rows = []
     if results_pkl.exists():
         all_rows = pd.read_pickle(results_pkl).to_dict('records')
@@ -110,14 +119,14 @@ def main():
         done = set()
 
     for dname in datasets:
-        need = [(s, m) for s in range(N_SEEDS) for m in METHODS
+        need = [(s, m) for s in range(n_seeds) for m in METHODS
                 if (dname, s, m) not in done]
         if not need:
             _log(f"{dname}: all seeds/methods done, skipping load")
             continue
         _log(f"{dname}: loading dataset")
         X, y = get_dataset(dname, DATA_DIR)
-        for seed in range(N_SEEDS):
+        for seed in range(n_seeds):
             if all((dname, seed, m) in done for m in METHODS):
                 continue
             t0 = time.time()

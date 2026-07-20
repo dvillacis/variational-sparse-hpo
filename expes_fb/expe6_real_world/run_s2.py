@@ -156,6 +156,12 @@ def parse_args():
         default="",
         help="Redirect results to results/setting2_<tag>/ (avoids clobbering).",
     )
+    parser.add_argument(
+        "--seeds",
+        type=int,
+        default=None,
+        help="Number of random-split seeds to run. Default: N_SEEDS.",
+    )
     return parser.parse_args()
 
 
@@ -247,8 +253,25 @@ def _completed_methods(df, dataset_name, seed):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_split(n_total, seed):
+# Below this many samples an unstratified 60/20/20 split can produce
+# single-class val/test sets (e.g. duke n=44), so stratify by label. Gated on
+# size so the published splits of the large Setting-2 datasets are unchanged.
+STRATIFY_MAX_N = 500
+
+
+def _make_split(n_total, seed, y=None):
     rng = np.random.default_rng(seed)
+    if y is not None and n_total < STRATIFY_MAX_N:
+        idx_tr, idx_val, idx_te = [], [], []
+        for cls in np.unique(y):
+            idx_c = rng.permutation(np.flatnonzero(y == cls))
+            n_tr = int(0.60 * len(idx_c))
+            n_val = int(0.20 * len(idx_c))
+            idx_tr.append(idx_c[:n_tr])
+            idx_val.append(idx_c[n_tr:n_tr + n_val])
+            idx_te.append(idx_c[n_tr + n_val:])
+        return (np.concatenate(idx_tr), np.concatenate(idx_val),
+                np.concatenate(idx_te))
     idx = rng.permutation(n_total)
     n_tr  = int(0.60 * n_total)
     n_val = int(0.20 * n_total)
@@ -613,6 +636,7 @@ def run_gradient_method(method_name, X, y, idx_train, idx_val, idx_test,
 
     return dict(
         method=method_name,
+        log_alpha_final=log_alpha_final,   # terminal hyperparameter x_T (for audits)
         val_objs=list(monitor.objs),
         hidden_grad_norms=[],   # no ground truth in Setting 2
         best_val=best_val,
@@ -640,7 +664,7 @@ def run_one(dataset_name, X, y, seed, keep_debug=False, skip_methods=None,
     run_prefix = f"s2 {dataset_name} seed={seed}"
     skip_methods = set(skip_methods or [])
     n_total = X.shape[0]
-    idx_train, idx_val, idx_test = _make_split(n_total, seed)
+    idx_train, idx_val, idx_test = _make_split(n_total, seed, y=y)
     X, prep_notes = _preprocess_features_for_split(dataset_name, X, idx_train)
     m = X.shape[1]
     _log(
@@ -720,8 +744,10 @@ def run_one(dataset_name, X, y, seed, keep_debug=False, skip_methods=None,
 def main():
     args = parse_args()
     global RUN_MAX_SAMPLES, RESULTS_DIR, RESULTS_PATH, CHECKPOINT_PATH
-    global CHECKPOINT_META_PATH
+    global CHECKPOINT_META_PATH, N_SEEDS
     RUN_MAX_SAMPLES = args.max_samples
+    if args.seeds is not None:
+        N_SEEDS = args.seeds
     if args.tag:
         RESULTS_DIR = RESULTS_DIR.parent / f'setting2_{args.tag}'
         RESULTS_PATH = RESULTS_DIR / 'results.pkl'

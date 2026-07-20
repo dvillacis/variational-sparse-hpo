@@ -151,6 +151,56 @@ REGISTRY = {
             _step("plot", "plot_s2_convergence.py"),
         ],
     },
+    "exp6-conv-bio": {
+        "dir": "expe6_real_world",
+        "tier": "real",
+        "smoke_skip": True,
+        # Setting 2b (SETTING2_BIACTIVE_EXTENSION proposal): the exp6-conv
+        # protocol, unchanged, on the six naturally-biactive diagnostic datasets
+        # (tab:biactivity_diagnostic). The diagnostic predicts where the SC and
+        # support-restricted oracles differ (microarray) and where they are
+        # bit-identical; this run verifies both under the standard uniform init.
+        # 10 seeds: tiny-n datasets (duke n=44) need the variance reduction;
+        # splits are stratified below run_s2.STRATIFY_MAX_N. The table step
+        # rebuilds table_s2_cap60.tex with the 2b block appended (requires
+        # exp6-conv to have run; scalar tags are optional and skipped if absent).
+        "desc": "Setting 2b: naturally biactive datasets (plateau stop, cap 60) "
+                "-> 2b block of table_s2_cap60.tex",
+        "clean": ["results/setting2_biactive", "results/setting2_biactive_scalar"],
+        "steps": [
+            _step("run", "run_s2_convergence.py",
+                  args=["--cap", "60", "--tag", "setting2_biactive",
+                        "--seeds", "10", "--datasets",
+                        "leukemia", "colon-cancer", "duke breast-cancer",
+                        "madelon", "a9a", "splice"]),
+            _step("run", "run_s2.py",
+                  args=["--methods", "scalar_cv", "--tag", "biactive_scalar",
+                        "--seeds", "10", "--datasets",
+                        "leukemia", "colon-cancer", "duke breast-cancer",
+                        "madelon", "a9a", "splice"]),
+            _step("table", "table_s2_convergence.py",
+                  args=["--src-tags", "setting2_cap60", "setting2_biactive",
+                        "--scalar-tags", "setting2", "setting2_biactive_scalar"]),
+        ],
+    },
+    "exp7": {
+        "dir": "expe7_certificate_soundness",
+        "tier": "real",
+        # Replaces the old Section 5.5 diagnostic. Audits whether the null
+        # stopping test ||h||=0 is a SOUND stationarity certificate, against an
+        # independent ground truth Phi'(x;-e_i) (model-free FD of the solver) +
+        # a closed-form synthetic. Pointwise, no end-to-end HPO runs.
+        "desc": "certificate soundness at alpha_max -> tab:certificate_soundness, "
+                "fig_certificate_soundness.pdf (+ closed-form synthetic)",
+        "clean": ["results"],
+        "steps": [
+            _step("run", "run.py", smoke_args=["--datasets", "leukemia", "splice",
+                                               "--quick", "--no-sweep"]),
+            _step("run", "synthetic.py"),
+            _step("table", "table.py"),
+            _step("plot", "plot.py"),
+        ],
+    },
 }
 
 
