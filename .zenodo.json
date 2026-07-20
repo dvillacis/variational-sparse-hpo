@@ -5,15 +5,18 @@
   "creators": [
     {
       "name": "Pérez-Aros, Pedro",
-      "affiliation": "TODO — add affiliation before publishing"
+      "affiliation": "Departamento de Ingeniería Matemática and Centro de Modelamiento Matemático  (CNRS UMI 2807), Universidad de Chile",
+      "orcid": "0000-0002-8756-3011"
     },
     {
       "name": "Vilches, Emilio",
-      "affiliation": "TODO — add affiliation before publishing"
+      "affiliation": "Instituto de Ciencias de la Ingeniería, Universidad de O’Higgins",
+      "orcid": "0000-0002-4387-9313"
     },
     {
       "name": "Villacís, David",
-      "affiliation": "TODO — add affiliation before publishing"
+      "affiliation": "Departamento de Métodos Cuantitativos, Universidad Loyola Andalucía",
+      "orcid": "0000-0002-8016-9062"
     }
   ],
   "access_right": "open",

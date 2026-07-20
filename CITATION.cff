@@ -19,18 +19,17 @@ repository-code: "https://github.com/dvillacis/variational-sparse-hpo"
 authors:
   - family-names: Pérez-Aros
     given-names: Pedro
-    # TODO before minting the DOI — uncomment and fill:
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
-    # affiliation: "Affiliation"
+    orcid: "https://orcid.org/0000-0002-8756-3011"
+    affiliation: "Departamento de Ingeniería Matemática and Centro de Modelamiento Matemático  (CNRS UMI 2807), Universidad de Chile"
   - family-names: Vilches
     given-names: Emilio
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
-    # affiliation: "Affiliation"
+    orcid: "https://orcid.org/0000-0002-4387-9313"
+    affiliation: "Instituto de Ciencias de la Ingeniería, Universidad de O’Higgins"
   - family-names: Villacís
     given-names: David
     email: david@villacis.net
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
-    # affiliation: "Affiliation"
+    orcid: "https://orcid.org/0000-0002-8016-9062"
+    affiliation: "Departamento de Métodos Cuantitativos, Universidad Loyola Andalucía"
 keywords:
   - bilevel optimization
   - hyperparameter optimization
